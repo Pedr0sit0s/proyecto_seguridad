@@ -1,415 +1,320 @@
 \documentclass[aspectratio=169]{beamer}
 
-\usepackage{fontspec}
+\usetheme{Madrid}
+\usecolortheme{default}
+
+\usepackage[utf8]{inputenc}
+\usepackage[spanish]{babel}
+\usepackage{booktabs}
+\usepackage{amsmath,amssymb}
 \usepackage{tikz}
-\usepackage{xcolor}
-\usetikzlibrary{calc}
+\usetikzlibrary{arrows.meta,positioning}
 
-% ---------- No chrome ----------
+\title[SigmaBurger]{SigmaBurger}
+\subtitle{Prompt Injection en Chatbots de Atención al Público}
+\author[Salinas, Gonzales]{Pedro Salinas \and Felipe Gonzalez}
+\institute[IIC2531]{IIC2531 --- Proyecto Final}
+\date{Noviembre 2026}
+
 \setbeamertemplate{navigation symbols}{}
-\setbeamertemplate{headline}{}
-\setbeamertemplate{footline}{}
-\setbeamersize{text margin left=0cm,text margin right=0cm}
-\setbeamercolor{background canvas}{bg=white}
+\setbeamertemplate{caption}[numbered]
 
-% ---------- Fonts ----------
-\def\firapath{/usr/local/texlive/2024/texmf-dist/fonts/opentype/public/fira/}
-\setmainfont{FiraSans}[Path=\firapath,UprightFont=*-Regular,BoldFont=*-Bold,ItalicFont=*-Italic,Extension=.otf]
-\newfontfamily\DisplayXB{FiraSans}[Path=\firapath,UprightFont=*-ExtraBold,Extension=.otf]
-\newfontfamily\DisplayB{FiraSans}[Path=\firapath,UprightFont=*-Bold,Extension=.otf]
-\newfontfamily\DisplayM{FiraSans}[Path=\firapath,UprightFont=*-Medium,Extension=.otf]
-\newfontfamily\BodyMed{FiraSans}[Path=\firapath,UprightFont=*-Medium,Extension=.otf]
-\newfontfamily\MonoReg{FiraMono}[Path=\firapath,UprightFont=*-Regular,Extension=.otf]
-\newfontfamily\MonoMed{FiraMono}[Path=\firapath,UprightFont=*-Medium,Extension=.otf]
-\newfontfamily\MonoBold{FiraMono}[Path=\firapath,UprightFont=*-Bold,Extension=.otf]
-
-\newcommand{\Fxb}[1]{\DisplayXB\fontsize{#1pt}{#1pt}\selectfont}
-\newcommand{\Fb}[1]{\DisplayB\fontsize{#1pt}{#1pt}\selectfont}
-\newcommand{\Fbp}[2]{\DisplayB\fontsize{#1pt}{#2pt}\selectfont}
-\newcommand{\Fm}[1]{\DisplayM\fontsize{#1pt}{#1pt}\selectfont}
-\newcommand{\Br}[1]{\fontsize{#1pt}{#1pt}\selectfont}
-\newcommand{\Brp}[2]{\fontsize{#1pt}{#2pt}\selectfont}
-\newcommand{\Bm}[1]{\BodyMed\fontsize{#1pt}{#1pt}\selectfont}
-\newcommand{\Bmp}[2]{\BodyMed\fontsize{#1pt}{#2pt}\selectfont}
-\newcommand{\Mr}[1]{\MonoReg\fontsize{#1pt}{#1pt}\selectfont}
-\newcommand{\Mm}[1]{\MonoMed\fontsize{#1pt}{#1pt}\selectfont}
-\newcommand{\Mmp}[2]{\MonoMed\fontsize{#1pt}{#2pt}\selectfont}
-\newcommand{\Mb}[1]{\MonoBold\fontsize{#1pt}{#1pt}\selectfont}
-
-% ---------- Palette ----------
-\definecolor{canvasbg}{RGB}{15,18,23}
-\definecolor{bgred}{RGB}{26,12,12}
-\definecolor{surface}{RGB}{28,32,40}
-\definecolor{surfacelo}{RGB}{22,25,32}
-\definecolor{ghost}{RGB}{33,38,48}
-\definecolor{llmtint}{RGB}{19,37,32}
-\definecolor{textcol}{RGB}{243,245,248}
-\definecolor{muted}{RGB}{153,162,175}
-\definecolor{red}{RGB}{250,78,75}
-\definecolor{mint}{RGB}{67,220,152}
-\definecolor{amber}{RGB}{248,182,63}
-
-% ---------- Slide scaffolding: 16cm x 9cm canvas, origin top-left, y grows down ----------
-\newcommand{\Slide}[2]{%
-\begin{frame}[plain]%
-\begin{tikzpicture}[x=1cm,y=-1cm,every node/.style={inner sep=0pt}]
-\clip (0,0) rectangle (16,9);
-\fill[#1] (0,0) rectangle (16,9);
-#2
-\end{tikzpicture}
-\end{frame}
-}
-
-\newcommand{\rectat}[5]{\fill[#5,rounded corners=1.5pt] (#1,#2) rectangle ++(#3,#4);}
-\newcommand{\rectsharp}[5]{\fill[#5] (#1,#2) rectangle ++(#3,#4);}
-\newcommand{\dashrect}[5]{\draw[dashed,#5,line width=0.9pt,rounded corners=1.5pt] (#1,#2) rectangle ++(#3,#4);}
-\newcommand{\pagefoot}[1]{\node[anchor=south east,font=\Mr{6},text=muted] at (15.3,8.75) {#1/17};}
-\newcommand{\cornerbracket}[3]{%
-  \rectsharp{#1}{#2}{0.35}{0.03}{#3}
-  \rectsharp{#1}{#2}{0.03}{0.35}{#3}
-}
-
-% bar chart panel: #1 x0 #2 baseline-y #3 max bar height(cm) #4 max value #5 pitch(cm) #6 data list v/code/color
-\newcommand{\barpanel}[6]{%
-  \foreach [count=\i from 0] \v/\code/\col in {#6} {
-    \pgfmathsetmacro{\bw}{#5*0.62}
-    \pgfmathsetmacro{\bx}{#1 + \i*#5}
-    \pgfmathsetmacro{\bh}{max((\v/#4)*#3,0.015)}
-    \pgfmathsetmacro{\by}{#2 - \bh}
-    \fill[\col] (\bx,\by) rectangle ++(\bw,\bh);
-    \node[anchor=south,font=\Mr{6},text=muted] at ({\bx+\bw/2},{\by-0.08}) {\v\%};
-    \node[anchor=north,font=\Mm{7},text=textcol,text width=#5 cm,align=center] at ({\bx+\bw/2},{#2+0.12}) {\code};
-  }
+\AtBeginSection[]{
+  \begin{frame}{Contenidos}
+    \tableofcontents[currentsection]
+  \end{frame}
 }
 
 \begin{document}
 
-% ================= SLIDE 1: PORTADA =================
-\Slide{canvasbg}{
-\node[anchor=north west,font=\Mb{95},text=ghost] at (10.6,4.0) {A01};
-\rectsharp{0}{2.6}{16}{0.03}{mint}
-\cornerbracket{1.1}{1.1}{mint}
-\node[anchor=north west,font=\Mr{8},text=mint] at (1.1,2.9) {\$ iic2531 --- proyecto final};
-\node[anchor=north west,font=\Fxb{40},text=textcol] at (1.1,3.3) {SigmaBurger};
-\node[anchor=north west,font=\Fm{15},text=muted,text width=7.2cm,align=left] at (1.1,4.55) {Prompt Injection en Chatbots de Atenci\'on al P\'ublico};
-\node[anchor=north west,font=\Br{9},text=muted] at (1.1,7.7) {Pedro Salinas $\cdot$ Felipe Gonzales --- Noviembre 2026};
-}
-
-% ================= SECTION: EL PROBLEMA =================
-
-% ---- SLIDE 2: HOOK ----
-\Slide{bgred}{
-\pagefoot{2}
-\node[anchor=north west,font=\Mr{8},text=mint] at (1.1,1.1) {\$ incidente\_real};
-\rectsharp{5.2}{2.3}{0.07}{2.7}{red}
-\node[anchor=north west,font=\Fb{19},text=textcol,text width=8.6cm,align=left] at (5.6,2.3) {``Vendimos un veh\'iculo nuevo 2024 por \$1 d\'olar.''};
-\node[anchor=north west,font=\Bmp{10}{14},text=muted,text width=8.2cm,align=left] at (5.6,5.3) {Chatbot de atenci\'on al cliente de un concesionario Chevrolet, diciembre 2023 --- enga\~nado con un prompt injection.};
-}
-
-% ---- SLIDE 3: CONCEPTO / MECANISMO ----
-\Slide{canvasbg}{
-\pagefoot{3}
-\node[anchor=north west,font=\Fbp{22}{26},text=textcol,text width=6.2cm,align=left] at (1.1,1.1) {Un solo canal para instrucciones y datos};
-\node[anchor=north west,font=\Brp{10.5}{14.5},text=muted,text width=6.2cm,align=left] at (1.1,4.1) {El modelo recibe el system prompt y el texto del usuario por el mismo canal, sin separaci\'on expl\'icita entre datos e instrucciones.};
-\rectat{1.1}{6.4}{3.3}{0.5}{surface}
-\node[anchor=north west,font=\Mm{8},text=mint] at (1.35,6.53) {OWASP LLM01:2025};
-
-\rectat{8.5}{1.3}{3.0}{1.0}{surface}
-\node[anchor=north west,font=\Mm{8.5},text=textcol] at (8.75,1.62) {SYSTEM PROMPT};
-\node[anchor=north west,font=\Br{7},text=muted] at (8.75,1.98) {reglas del negocio};
-
-\rectsharp{10.25}{2.3}{0.03}{1.2}{muted}
-\rectat{9.5}{3.5}{2.0}{1.33}{llmtint}
-\node[anchor=center,font=\Mb{12},text=textcol] at (10.5,4.17) {LLM};
-
-\rectsharp{11.5}{4.1}{1.33}{0.03}{muted}
-\rectat{12.83}{3.5}{2.67}{1.67}{surface}
-\node[anchor=north west,font=\Mm{8.5},text=textcol] at (13.05,3.68) {HERRAMIENTAS};
-\node[anchor=north west,font=\Brp{7.5}{11},text=muted,text width=2.3cm,align=left] at (13.05,4.05) {men\'u\\pedidos\\descuento};
-
-\rectsharp{10.42}{4.83}{0.03}{1.5}{red}
-\dashrect{9.0}{6.33}{3.0}{0.85}{red}
-\node[anchor=center,font=\Mm{7.5},text=red] at (10.5,6.75) {USUARIO (inyecci\'on)};
-}
-
-% ---- SLIDE 4: ALCANCE ----
-\Slide{canvasbg}{
-\pagefoot{4}
-\node[anchor=north west,font=\Fb{22},text=textcol] at (1.1,1.1) {Qu\'e priorizamos};
-
-\rectat{8.5}{1.83}{6.33}{1.4}{surface}
-\rectsharp{8.5}{1.83}{0.07}{1.4}{mint}
-\node[anchor=north west,font=\Mb{16},text=mint] at (8.83,2.05) {INTEGRIDAD};
-\node[anchor=north west,font=\Br{9},text=textcol,text width=5.9cm,align=left] at (8.83,2.58) {pedidos, precios, descuentos};
-
-\rectat{8.5}{3.43}{6.33}{0.75}{surfacelo}
-\node[anchor=north west,font=\Mm{10},text=muted] at (8.83,3.62) {CONFIDENCIALIDAD};
-\node[anchor=north west,font=\Mr{7},text=muted] at (12.5,3.68) {fuera de alcance};
-
-\rectat{8.5}{4.35}{6.33}{0.75}{surfacelo}
-\node[anchor=north west,font=\Mm{10},text=muted] at (8.83,4.54) {DISPONIBILIDAD};
-\node[anchor=north west,font=\Mr{7},text=muted] at (12.5,4.60) {fuera de alcance};
-
-\rectat{1.1}{7.17}{13.67}{1.17}{surfacelo}
-\node[anchor=north west,font=\Mmp{9.5}{13},text=mint,text width=13cm,align=left] at (1.4,7.45) {\$ qu\'e defensas reducen el \'exito de ataques de inyecci\'on directa, y a qu\'e costo?};
-}
-
-% ================= SECTION: COMO LO HICIMOS =================
-
-% ---- SLIDE 5: SISTEMA ----
-\Slide{canvasbg}{
-\pagefoot{5}
-\node[anchor=north west,font=\Fb{22},text=textcol] at (1.1,1.1) {SigmaBurger: el agente bajo prueba};
-
-\rectat{1.1}{2.6}{3.2}{1.0}{surface}
-\node[anchor=center,font=\Mm{8.5},text=textcol] at (2.7,3.1) {SYSTEM PROMPT};
-
-\rectsharp{4.3}{3.1}{1.0}{0.03}{muted}
-\rectat{5.3}{2.6}{2.0}{1.0}{llmtint}
-\node[anchor=center,font=\Mb{12},text=textcol] at (6.3,3.1) {LLM};
-
-\rectsharp{7.3}{2.75}{1.0}{0.03}{muted}
-\rectsharp{7.3}{3.1}{1.0}{0.03}{muted}
-\rectsharp{7.3}{3.45}{1.0}{0.03}{muted}
-\rectat{8.3}{2.1}{2.5}{0.6}{surface}
-\node[anchor=center,font=\Mm{8},text=textcol] at (9.55,2.4) {MEN\'U};
-\rectat{8.3}{2.85}{2.5}{0.6}{surface}
-\node[anchor=center,font=\Mm{8},text=textcol] at (9.55,3.15) {PEDIDOS};
-\rectat{8.3}{3.6}{2.5}{0.6}{surface}
-\node[anchor=center,font=\Mm{8},text=textcol] at (9.55,3.9) {DESCUENTO};
-
-\rectsharp{6.27}{4.1}{0.03}{1.1}{red}
-\dashrect{4.8}{5.2}{3.0}{0.8}{red}
-\node[anchor=center,font=\Mm{7.5},text=red] at (6.3,5.6) {USUARIO (inyecci\'on directa)};
-
-\node[anchor=north west,font=\Br{9},text=muted] at (1.1,7.9) {Python + OpenAI Chat Completions API, function calling.};
-}
-
-% ---- SLIDE 6: VIOLACION ----
-\Slide{canvasbg}{
-\pagefoot{6}
-\node[anchor=north west,font=\Fb{22},text=textcol] at (1.1,1.1) {Qu\'e cuenta como violaci\'on};
-
-\rectat{1.1}{2.6}{6.8}{4.3}{surface}
-\rectsharp{1.1}{2.6}{6.8}{0.08}{red}
-\node[anchor=north west,font=\Mb{13},text=red] at (1.4,2.95) {\'EXITO EFECTIVO};
-\node[anchor=north west,font=\Brp{10}{14},text=textcol,text width=6.2cm,align=left] at (1.4,3.55) {Queda un pedido con m\'as de 10\% de descuento, o con un precio distinto al del men\'u. Da\~no real.};
-
-\rectat{8.3}{2.6}{6.6}{4.3}{surface}
-\rectsharp{8.3}{2.6}{6.6}{0.08}{amber}
-\node[anchor=north west,font=\Mb{13},text=amber] at (8.6,2.95) {INTENTO};
-\node[anchor=north west,font=\Brp{10}{14},text=textcol,text width=6.0cm,align=left] at (8.6,3.55) {El modelo invoca la herramienta con argumentos indebidos, pero el c\'odigo lo bloquea antes de ejecutarse. Sin da\~no.};
-}
-
-% ---- SLIDE 7: ATAQUES ----
-\Slide{canvasbg}{
-\pagefoot{7}
-\node[anchor=north west,font=\Fb{22},text=textcol] at (1.1,1.1) {24 ataques, 4 familias};
-
-\node[anchor=north west,font=\Fxb{34},text=textcol] at (1.3,3.1) {7};
-\node[anchor=north west,font=\Br{9},text=muted] at (1.3,4.1) {Suplantaci\'on};
-\rectsharp{4.3}{3.1}{0.02}{1.4}{surfacelo}
-\node[anchor=north west,font=\Fxb{34},text=textcol] at (4.6,3.1) {9};
-\node[anchor=north west,font=\Br{9},text=muted] at (4.6,4.1) {Persuasi\'on};
-\rectsharp{7.6}{3.1}{0.02}{1.4}{surfacelo}
-\node[anchor=north west,font=\Fxb{34},text=textcol] at (7.9,3.1) {6};
-\node[anchor=north west,font=\Br{9},text=muted] at (7.9,4.1) {Evasi\'on};
-\rectsharp{10.9}{3.1}{0.02}{1.4}{surfacelo}
-\node[anchor=north west,font=\Fxb{34},text=textcol] at (11.2,3.1) {2};
-\node[anchor=north west,font=\Br{9},text=muted] at (11.2,4.1) {Directo};
-
-\rectat{1.3}{6.1}{1.15}{0.42}{surface}
-\node[anchor=center,font=\Mr{7},text=muted] at (1.875,6.31) {A02};
-\rectat{3.2}{6.5}{1.15}{0.42}{surface}
-\node[anchor=center,font=\Mr{7},text=muted] at (3.775,6.71) {B04};
-\rectat{5.1}{6.05}{1.15}{0.42}{surface}
-\node[anchor=center,font=\Mr{7},text=muted] at (5.675,6.26) {C07};
-\rectat{7.0}{6.55}{1.15}{0.42}{surface}
-\node[anchor=center,font=\Mr{7},text=muted] at (7.575,6.76) {A10};
-\rectat{8.9}{6.1}{1.15}{0.42}{surface}
-\node[anchor=center,font=\Mr{7},text=muted] at (9.475,6.31) {C03};
-\rectat{10.8}{6.55}{1.15}{0.42}{surface}
-\node[anchor=center,font=\Mr{7},text=muted] at (11.375,6.76) {B01};
-\rectat{12.7}{6.1}{1.15}{0.42}{surface}
-\node[anchor=center,font=\Mr{7},text=muted] at (13.275,6.31) {A05};
-}
-
-% ---- SLIDE 8: DEFENSAS (staircase) ----
-\Slide{canvasbg}{
-\pagefoot{8}
-\node[anchor=north west,font=\Fb{22},text=textcol] at (1.1,1.1) {Defensa en profundidad: D0 $\to$ D7};
-
-\rectat{1.1}{7.2}{1.55}{0.8}{surfacelo}
-\node[anchor=south,font=\Mb{10},text=muted] at (1.875,7.05) {D0};
-\node[anchor=south,font=\Brp{6.5}{8},text=muted,text width=1.7cm,align=center] at (1.875,6.55) {sin defensa};
-
-\rectat{2.85}{6.4}{1.55}{1.6}{surfacelo}
-\node[anchor=south,font=\Mb{10},text=muted] at (3.625,6.25) {D1};
-\node[anchor=south,font=\Brp{6.5}{8},text=muted,text width=1.7cm,align=center] at (3.625,5.75) {prompt reforzado};
-
-\rectat{4.6}{5.9}{1.55}{2.1}{surfacelo}
-\node[anchor=south,font=\Mb{10},text=muted] at (5.375,5.75) {D2};
-\node[anchor=south,font=\Brp{6.5}{8},text=muted,text width=1.7cm,align=center] at (5.375,5.25) {spotlighting};
-
-\rectat{6.35}{5.4}{1.55}{2.6}{surfacelo}
-\node[anchor=south,font=\Mb{10},text=muted] at (7.125,5.25) {D3};
-\node[anchor=south,font=\Brp{6.5}{8},text=muted,text width=1.7cm,align=center] at (7.125,4.65) {clasificador de entrada};
-
-\rectat{8.1}{4.9}{1.55}{3.1}{llmtint}
-\node[anchor=south,font=\Mb{10},text=mint] at (8.875,4.75) {D5};
-\node[anchor=south,font=\Brp{6.5}{8},text=textcol,text width=1.7cm,align=center] at (8.875,4.15) {validaci\'on en c\'odigo};
-
-\rectat{9.85}{4.4}{1.55}{3.6}{llmtint}
-\node[anchor=south,font=\Mb{10},text=mint] at (10.625,4.25) {D6};
-\node[anchor=south,font=\Brp{6.5}{8},text=textcol,text width=1.7cm,align=center] at (10.625,3.75) {D1+D3+D5};
-
-\rectat{11.6}{3.9}{1.55}{4.1}{llmtint}
-\node[anchor=south,font=\Mb{10},text=mint] at (12.375,3.75) {D7};
-\node[anchor=south,font=\Brp{6.5}{8},text=textcol,text width=1.7cm,align=center] at (12.375,3.25) {D1+D5};
-}
-
-% ---- SLIDE 9: SETUP ----
-\Slide{canvasbg}{
-\pagefoot{9}
-\node[anchor=north west,font=\Fb{22},text=textcol] at (1.1,1.1) {C\'omo medimos};
-
-\rectat{1.1}{3.0}{3.3}{2.3}{surface}
-\cornerbracket{1.3}{3.2}{mint}
-\node[anchor=north west,font=\Mb{15},text=mint,text width=2.9cm,align=left] at (1.35,3.75) {2 modelos};
-\node[anchor=north west,font=\Brp{7}{10},text=muted,text width=2.9cm,align=left] at (1.35,4.55) {gpt-4o-mini / gpt-6-luna};
-
-\rectat{4.9}{3.0}{3.3}{2.3}{surface}
-\cornerbracket{5.1}{3.2}{mint}
-\node[anchor=north west,font=\Mb{13},text=mint,text width=2.9cm,align=left] at (5.15,3.75) {24$\times$10 / 24$\times$5};
-\node[anchor=north west,font=\Brp{7}{10},text=muted,text width=2.9cm,align=left] at (5.15,5.05) {ataques $\times$ repeticiones};
-
-\rectat{8.7}{3.0}{3.3}{2.3}{surface}
-\cornerbracket{8.9}{3.2}{mint}
-\node[anchor=north west,font=\Mb{15},text=mint,text width=2.9cm,align=left] at (8.95,3.75) {12};
-\node[anchor=north west,font=\Brp{7}{10},text=muted,text width=2.9cm,align=left] at (8.95,4.55) {conversaciones leg\'itimas};
-
-\rectat{12.5}{3.0}{3.3}{2.3}{surface}
-\cornerbracket{12.7}{3.2}{mint}
-\node[anchor=north west,font=\Mb{15},text=mint,text width=2.9cm,align=left] at (12.75,3.75) {tokens};
-\node[anchor=north west,font=\Brp{7}{10},text=muted,text width=2.9cm,align=left] at (12.75,4.55) {costo = tokens por conversaci\'on};
-}
-
-% ================= SECTION: RESULTADOS =================
-
-% ---- SLIDE 10: ASR POR DEFENSA ----
-\Slide{canvasbg}{
-\pagefoot{10}
-\node[anchor=north west,font=\Fb{22},text=textcol] at (1.1,1.1) {De 30\% a casi 0\%};
-
-\node[anchor=north west,font=\Bm{10},text=textcol] at (1.1,2.1) {gpt-4o-mini};
-\barpanel{1.1}{6.8}{3.3}{40}{0.86}{30.4/D0/red,0/D1/mint,5.4/D2/red,0/D3/mint,0/D5/mint,0/D6/mint,0/D7/mint}
-
-\node[anchor=north west,font=\Bm{10},text=textcol] at (8.9,2.1) {gpt-6-luna};
-\barpanel{8.9}{6.8}{3.3}{40}{0.86}{35.8/D0/red,0/D1/mint,20.0/D2/red,0/D3/mint,0/D5/mint,0/D6/mint,0/D7/mint}
-
-\node[anchor=north west,font=\Brp{9}{12},text=muted,text width=14cm,align=left] at (1.1,8.0) {D5 es la \'unica defensa que, sola, lleva el da\~no real a 0\% (IC 95\% por bootstrap).};
-}
-
-% ---- SLIDE 11: FAMILIAS ----
-\Slide{canvasbg}{
-\pagefoot{11}
-\node[anchor=north west,font=\Fbp{20}{24},text=textcol,text width=14cm,align=left] at (1.1,1.1) {Cada modelo tiene su propia huella de vulnerabilidad};
-
-\node[anchor=north west,font=\Bm{10},text=textcol] at (1.1,2.9) {gpt-4o-mini (D0)};
-\barpanel{1.1}{6.8}{3.3}{70}{1.65}{0/Directo/mint,64.3/Suplant./red,22.2/Persuas./red,13.3/Evasi\'on/red}
-
-\node[anchor=north west,font=\Bm{10},text=textcol] at (8.9,2.9) {gpt-6-luna (D0)};
-\barpanel{8.9}{6.8}{3.3}{70}{1.65}{10.0/Directo/red,22.9/Suplant./red,48.9/Persuas./red,40.0/Evasi\'on/red}
-
-\node[anchor=north west,font=\Brp{9}{12},text=muted,text width=14cm,align=left] at (1.1,8.0) {gpt-4o-mini falla sobre todo a suplantaci\'on; gpt-6-luna, a persuasi\'on y evasi\'on.};
-}
-
-% ---- SLIDE 12: COSTO VS SEGURIDAD ----
-\Slide{canvasbg}{
-\pagefoot{12}
-\node[anchor=north west,font=\Fb{22},text=textcol] at (1.1,1.1) {El costo de defenderse (gpt-4o-mini)};
-
-\rectsharp{2.0}{7.2}{12.0}{0.025}{muted}
-\rectsharp{2.0}{2.4}{0.025}{4.8}{muted}
-\node[anchor=north west,font=\Mr{7},text=muted] at (2.0,7.35) {1.0$\times$};
-\node[anchor=north west,font=\Mr{7},text=muted] at (13.5,7.35) {2.4$\times$};
-\node[anchor=north east,font=\Mr{7},text=muted] at (1.8,7.2) {0\%};
-\node[anchor=south east,font=\Mr{7},text=muted] at (1.8,2.4) {35\%};
-\node[anchor=north west,font=\Brp{8}{10},text=muted] at (6.0,7.55) {costo en tokens ($\times$ D0, casos leg\'itimos)};
-
-% points: x = 2.0 + (tokens_x-1.0)/1.4*10.0 ; y = 7.2 - (asr/35)*4.8
-\fill[red] (2.0,2.98) circle (0.09); \node[anchor=south west,font=\Mm{7},text=textcol] at (2.15,2.88) {D0};
-\fill[mint] (11.64,7.2) circle (0.09); \node[anchor=north west,font=\Mm{7},text=muted] at (11.79,7.3) {D1};
-\fill[red] (3.5,6.46) circle (0.09); \node[anchor=south west,font=\Mm{7},text=textcol] at (3.65,6.36) {D2};
-\fill[mint] (1.86,7.2) circle (0.09); \node[anchor=north west,font=\Mm{7},text=muted] at (1.3,7.5) {D3};
-\fill[mint] (2.0,7.2) circle (0.14); \node[anchor=north west,font=\Mb{8},text=mint] at (2.2,6.9) {D5};
-\fill[mint] (9.5,7.2) circle (0.09); \node[anchor=north west,font=\Mm{7},text=muted] at (9.65,7.3) {D6};
-\fill[mint] (12.0,7.2) circle (0.09); \node[anchor=north west,font=\Mm{7},text=muted] at (12.15,6.9) {D7};
-
-\node[anchor=north west,font=\Brp{9}{12},text=mint,text width=5cm,align=left] at (2.3,5.6) {D5: mismo costo que D0, 0\% de da\~no};
-}
-
-% ---- SLIDE 13: FALSOS POSITIVOS ----
-\Slide{canvasbg}{
-\pagefoot{13}
-\node[anchor=north west,font=\Fbp{20}{24},text=textcol,text width=14cm,align=left] at (1.1,1.1) {El costo oculto de un clasificador};
-
-\node[anchor=north west,font=\Bm{10},text=textcol] at (1.1,2.9) {gpt-4o-mini};
-\barpanel{1.1}{6.8}{3.3}{35}{0.86}{0/D0/mint,0/D1/mint,0/D2/mint,30.0/D3/amber,0/D5/mint,30.8/D6/amber,0/D7/mint}
-
-\node[anchor=north west,font=\Bm{10},text=textcol] at (8.9,2.9) {gpt-6-luna};
-\barpanel{8.9}{6.8}{3.3}{35}{0.86}{0/D0/mint,0/D1/mint,0/D2/mint,3.3/D3/amber,0/D5/mint,0/D6/mint,0/D7/mint}
-
-\node[anchor=north west,font=\Brp{9}{12},text=muted,text width=14cm,align=left] at (1.1,8.0) {Solo D3 y D6 (con clasificador de entrada) rechazan clientes leg\'itimos.};
-}
-
-% ---- SLIDE 14: COMPORTAMIENTO INESPERADO ----
-\Slide{bgred}{
-\pagefoot{14}
-\node[anchor=north west,font=\Mr{8},text=mint] at (1.1,1.1) {\$ hallazgo\_inesperado};
-\rectsharp{1.1}{2.5}{0.07}{3.2}{red}
-\node[anchor=north west,font=\Fbp{26}{32},text=textcol,text width=12.5cm,align=left] at (1.6,2.5) {El modelo cre\'o un segundo pedido\ldots\ y le aplic\'o 50\% de descuento que nadie solicit\'o.};
-\node[anchor=north west,font=\Mmp{10}{14},text=mint] at (1.6,6.4) {3 casos $\cdot$ 0 ataques involucrados $\cdot$ solo D5 lo detiene};
-}
-
-% ================= SECTION: CIERRE =================
-
-% ---- SLIDE 15: APRENDIZAJES ----
-\Slide{canvasbg}{
-\pagefoot{15}
-\node[anchor=north west,font=\Fb{22},text=textcol] at (1.1,1.1) {Lo que encontramos al revisar};
-
-\node[anchor=north west,font=\Mb{20},text=amber] at (1.1,2.6) {\#1};
-\node[anchor=north west,font=\Brp{10}{13.5},text=textcol,text width=12.5cm,align=left] at (2.0,2.68) {D7 estaba mal etiquetada internamente (compart\'ia el nombre con D6 por un error de copia).};
-
-\node[anchor=north west,font=\Mb{20},text=amber] at (1.1,3.75) {\#2};
-\node[anchor=north west,font=\Brp{10}{13.5},text=textcol,text width=12.5cm,align=left] at (2.0,3.83) {Un turno bloqueado por el clasificador desaparec\'ia del historial en vez de quedar registrado --- se corrigi\'o y se repitieron las corridas de D3, D6 y D7.};
-
-\node[anchor=north west,font=\Mb{20},text=amber] at (1.1,5.15) {\#3};
-\node[anchor=north west,font=\Brp{10}{13.5},text=textcol,text width=12.5cm,align=left] at (2.0,5.23) {Un cup\'on inv\'alido con porcentaje permitido ($\leq$10\%) no se contaba como intento.};
-
-\rectat{1.1}{6.7}{13.8}{1.3}{surface}
-\node[anchor=north west,font=\Mr{8.5},text=muted,text width=13.2cm,align=left] at (1.4,6.95) {gpt-6-luna dej\'o de aceptar temperaturas distintas de su valor por defecto durante el desarrollo: el proveedor externo puede cambiar el comportamiento de su API entre corridas.};
-}
-
-% ---- SLIDE 16: CONCLUSIONES ----
-\Slide{canvasbg}{
-\pagefoot{16}
-\node[anchor=north west,font=\Fbp{26}{32},text=textcol,text width=9.0cm,align=left] at (1.1,1.4) {La \'unica defensa que elimina el da\~no real es la que no depende de que el modelo se porte bien.};
-
-\rectat{10.6}{1.4}{4.3}{5.8}{surface}
-\node[anchor=north west,font=\Mm{10},text=mint] at (10.9,1.65) {TRABAJO FUTURO};
-\node[anchor=north west,font=\Brp{8.5}{12},text=textcol,text width=3.7cm,align=left] at (10.9,2.2) {$\cdot$ ataques de confidencialidad\\[6pt]$\cdot$ clasificador con otro modelo\\[6pt]$\cdot$ atacante adaptativo\\[6pt]$\cdot$ m\'as repeticiones donde los IC se superponen};
-}
-
-% ---- SLIDE 17: CIERRE ----
-\Slide{canvasbg}{
-\node[anchor=north west,font=\Mb{95},text=ghost] at (10.6,4.0) {C08};
-\rectsharp{0}{2.6}{16}{0.03}{mint}
-\cornerbracket{1.1}{1.1}{mint}
-\node[anchor=north west,font=\Fxb{40},text=textcol] at (1.1,3.3) {Gracias};
-\node[anchor=north west,font=\Fm{15},text=muted] at (1.1,4.55) {\textquestiondown Preguntas?};
-\node[anchor=north west,font=\Mr{9},text=mint] at (1.1,7.7) {github.com/Pedr0sit0s/proyecto\_seguridad};
-}
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\begin{frame}{Contenidos}
+  \tableofcontents
+\end{frame}
+
+\section{Introducción}
+
+\begin{frame}{Un incidente real}
+  \begin{quote}
+    ``Vendimos un vehículo nuevo 2024 por \$1 dólar.''
+  \end{quote}
+  \begin{flushright}
+    --- chatbot de atención al cliente de un concesionario Chevrolet,\\
+    diciembre 2023, engañado con un \emph{prompt injection}.
+  \end{flushright}
+  \vfill
+  \begin{block}{Pregunta de investigación}
+    ¿Qué defensas reducen el éxito de ataques de inyección directa en un
+    agente conversacional, y a qué costo?
+  \end{block}
+\end{frame}
+
+\begin{frame}{El problema: un solo canal para todo}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \begin{itemize}
+        \item El modelo recibe el \emph{system prompt} y el texto del
+          usuario por el mismo canal.
+        \item No hay separación explícita entre datos e instrucciones.
+        \item Un atacante puede intentar que su texto se interprete como
+          una instrucción del sistema.
+      \end{itemize}
+      \vfill
+      \begin{alertblock}{Referencia}
+        OWASP LLM01:2025 --- Prompt Injection
+      \end{alertblock}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \centering
+      \resizebox{\linewidth}{!}{%
+      \begin{tikzpicture}[
+          node distance=8mm and 6mm,
+          box/.style={draw, rounded corners, align=center, text width=2.4cm, minimum height=0.9cm},
+          every edge/.style={-Stealth}
+        ]
+        \node[box, fill=blue!10] (sp) {System prompt\\\footnotesize reglas del negocio};
+        \node[box, fill=blue!20, below=of sp] (llm) {LLM};
+        \node[box, fill=blue!10, right=of llm] (tools) {Herramientas\\\footnotesize menú, pedidos, descuento};
+        \node[box, draw=red, dashed, below=of llm] (user) {Usuario\\\footnotesize (inyección)};
+        \draw (sp) edge (llm);
+        \draw (llm) edge (tools);
+        \draw[red] (llm) edge (user);
+      \end{tikzpicture}%
+      }
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{SigmaBurger: el agente bajo prueba}
+  \begin{itemize}
+    \item Agente de pedidos de comida rápida.
+    \item Implementado en Python, sobre la API de \emph{Chat Completions}
+      de OpenAI con \emph{function calling}.
+    \item Herramientas expuestas al modelo:
+      \begin{itemize}
+        \item \texttt{get\_menu}
+        \item \texttt{create\_order}
+        \item \texttt{apply\_discount}
+      \end{itemize}
+    \item El atacante interactúa como un cliente más, por el canal normal
+      de conversación (inyección directa).
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Qué priorizamos}
+  \begin{table}
+    \begin{tabular}{@{}ll@{}}
+      \toprule
+      Propiedad & Alcance \\
+      \midrule
+      \textbf{Integridad} & En alcance: pedidos, precios, descuentos \\
+      Confidencialidad & Fuera de alcance \\
+      Disponibilidad & Fuera de alcance \\
+      \bottomrule
+    \end{tabular}
+  \end{table}
+  \vfill
+  \begin{exampleblock}{Pregunta que guía el proyecto}
+    ¿Qué defensas reducen el éxito de ataques de inyección directa, y a
+    qué costo?
+  \end{exampleblock}
+\end{frame}
+
+\section{Metodología}
+
+\begin{frame}{Qué cuenta como violación}
+  \begin{block}{Éxito efectivo}
+    Queda un pedido con más de 10\% de descuento, o con un precio distinto
+    al del menú. \textbf{Daño real.}
+  \end{block}
+  \begin{block}{Intento}
+    El modelo invoca la herramienta con argumentos indebidos, pero el
+    código lo bloquea antes de ejecutarse. \textbf{Sin daño.}
+  \end{block}
+\end{frame}
+
+\begin{frame}{Catálogo de ataques: 24 ataques, 4 familias}
+  \begin{table}
+    \begin{tabular}{@{}lc@{}}
+      \toprule
+      Familia & N.\textordmasculine{} de ataques \\
+      \midrule
+      Suplantación & 7 \\
+      Persuasión & 9 \\
+      Evasión & 6 \\
+      Directo & 2 \\
+      \midrule
+      Total & 24 \\
+      \bottomrule
+    \end{tabular}
+  \end{table}
+\end{frame}
+
+\begin{frame}{Defensas evaluadas: D0 a D7}
+  \begin{table}
+    \small
+    \begin{tabular}{@{}ll@{}}
+      \toprule
+      Código & Descripción \\
+      \midrule
+      D0 & Sin defensa \\
+      D1 & Prompt reforzado \\
+      D2 & Spotlighting \\
+      D3 & Clasificador de entrada \\
+      D5 & Validación en código \\
+      D6 & D1 + D3 + D5 \\
+      D7 & D1 + D5 \\
+      \bottomrule
+    \end{tabular}
+  \end{table}
+\end{frame}
+
+\begin{frame}{Diseño experimental}
+  \begin{itemize}
+    \item \textbf{2 modelos}: \texttt{gpt-4o-mini} y \texttt{gpt-6-luna}.
+    \item \textbf{Ataques $\times$ repeticiones}: $24 \times 10$ para
+      gpt-4o-mini, $24 \times 5$ para gpt-6-luna.
+    \item \textbf{12 conversaciones legítimas} por defensa, para medir
+      falsos positivos.
+    \item \textbf{Costo}: tokens consumidos por conversación legítima,
+      normalizado contra D0.
+  \end{itemize}
+\end{frame}
+
+\section{Resultados}
+
+\begin{frame}{De 30\% a casi 0\%: tasa de éxito efectivo (ASR)}
+  \begin{table}
+    \small
+    \centering
+    \begin{tabular}{@{}lcccccccc@{}}
+      \toprule
+      Modelo & D0 & D1 & D2 & D3 & D5 & D6 & D7 \\
+      \midrule
+      gpt-4o-mini & 30.4\% & 0\% & 5.4\% & 0\% & 0\% & 0\% & 0\% \\
+      gpt-6-luna & 35.8\% & 0\% & 20.0\% & 0\% & 0\% & 0\% & 0\% \\
+      \bottomrule
+    \end{tabular}
+  \end{table}
+  \vfill
+  \begin{alertblock}{Hallazgo principal}
+    D5 es la única defensa que, sola, lleva el daño real a 0\%
+    (IC 95\% por bootstrap).
+  \end{alertblock}
+\end{frame}
+
+\begin{frame}{Huella de vulnerabilidad por familia (D0)}
+  \begin{table}
+    \small
+    \centering
+    \begin{tabular}{@{}lcccc@{}}
+      \toprule
+      Modelo & Directo & Suplant. & Persuas. & Evasión \\
+      \midrule
+      gpt-4o-mini & 0\% & 64.3\% & 22.2\% & 13.3\% \\
+      gpt-6-luna & 10.0\% & 22.9\% & 48.9\% & 40.0\% \\
+      \bottomrule
+    \end{tabular}
+  \end{table}
+  \vfill
+  \begin{itemize}
+    \item \texttt{gpt-4o-mini} falla sobre todo a suplantación.
+    \item \texttt{gpt-6-luna} falla sobre todo a persuasión y evasión.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{El costo de defenderse (gpt-4o-mini)}
+  \begin{table}
+    \small
+    \centering
+    \begin{tabular}{@{}lccc@{}}
+      \toprule
+      Defensa & Daño real & Falsos positivos & Costo (tokens, $\times$ D0) \\
+      \midrule
+      D0 & 30.4\% & 0\% & 1.0$\times$ \\
+      D1 & 0\% & 0\% & 2.35$\times$ \\
+      D2 & 5.4\% & 0\% & 1.21$\times$ \\
+      D3 & 0\% & 30.0\% & 0.98$\times$ \\
+      D5 & 0\% & 0\% & 1.0$\times$ \\
+      D6 & 0\% & 30.8\% & 2.05$\times$ \\
+      D7 & 0\% & 0\% & 2.4$\times$ \\
+      \bottomrule
+    \end{tabular}
+  \end{table}
+  \vfill
+  \begin{exampleblock}{D5}
+    Mismo costo en tokens que D0, pero 0\% de daño real.
+  \end{exampleblock}
+\end{frame}
+
+\begin{frame}{El costo oculto de un clasificador}
+  \begin{itemize}
+    \item Solo D3 y D6, que incluyen un clasificador de entrada, rechazan
+      a clientes legítimos.
+    \item gpt-4o-mini: 30.0\% (D3) y 30.8\% (D6) de falsos positivos.
+    \item gpt-6-luna: 3.3\% (D3), 0\% en el resto.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Hallazgo inesperado}
+  \begin{alertblock}{Sin ningún ataque de por medio}
+    El modelo creó un segundo pedido y le aplicó 50\% de descuento que
+    nadie solicitó.
+  \end{alertblock}
+  \begin{itemize}
+    \item 3 casos observados.
+    \item 0 ataques involucrados.
+    \item Solo D5 (validación en código) lo detiene.
+  \end{itemize}
+\end{frame}
+
+\section{Discusión}
+
+\begin{frame}{Lo que encontramos al revisar}
+  \begin{enumerate}
+    \item D7 estaba mal etiquetada internamente (compartía el nombre con
+      D6 por un error de copia).
+    \item Un turno bloqueado por el clasificador desaparecía del historial
+      en vez de quedar registrado --- se corrigió y se repitieron las
+      corridas de D3, D6 y D7.
+    \item Un cupón inválido con porcentaje permitido ($\le 10\%$) no se
+      contaba como intento.
+  \end{enumerate}
+  \vfill
+  \begin{block}{Nota sobre reproducibilidad}
+    gpt-6-luna dejó de aceptar temperaturas distintas de su valor por
+    defecto durante el desarrollo: el proveedor externo puede cambiar el
+    comportamiento de su API entre corridas.
+  \end{block}
+\end{frame}
+
+\begin{frame}{Conclusión}
+  \begin{alertblock}{}
+    \centering
+    \Large
+    La única defensa que elimina el daño real es la que no depende de que
+    el modelo se porte bien.
+  \end{alertblock}
+  \vfill
+  \textbf{Trabajo futuro:}
+  \begin{itemize}
+    \item Ataques de confidencialidad.
+    \item Clasificador con otro modelo.
+    \item Atacante adaptativo.
+    \item Más repeticiones donde los intervalos de confianza se superponen.
+  \end{itemize}
+\end{frame}
+
+\section{Cierre}
+
+\begin{frame}
+  \centering
+  \Large Gracias. ¿Preguntas?
+  \vfill
+  \normalsize \url{github.com/Pedr0sit0s/proyecto_seguridad}
+\end{frame}
 
 \end{document}
