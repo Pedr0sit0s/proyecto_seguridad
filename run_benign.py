@@ -5,11 +5,15 @@ import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
+from dotenv import load_dotenv
+
 from safe_cases import VALID as BENIGN, benign_ok, check_result, false_positive_turns
 from bot import Session
 from defenses import DEFENSES
 from evaluation import effective_violations
 from prompts import BLOCKED_REPLY
+
+load_dotenv()
 
 def run_one(client, model, temperature, case, rep, defense, reasoning_effort=None):
     s = Session(client, model, defense=DEFENSES[defense], temperature=temperature, reasoning_effort=reasoning_effort)

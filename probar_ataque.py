@@ -1,8 +1,11 @@
 import os
+from dotenv import load_dotenv
 from openai import OpenAI
 from bot import Session
 from attacks import ATTACKS, SETUP
 from evaluation import effective_violations, attempted_violations
+
+load_dotenv()
 
 client = OpenAI(
     base_url=os.getenv("BASE_URL"),

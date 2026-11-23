@@ -13,10 +13,14 @@ import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
+from dotenv import load_dotenv
+
 from attacks import ATTACKS, SETUP
 from bot import Session
 from evaluation import attempted_violations, effective_violations
 from defenses import DEFENSES
+
+load_dotenv()
 
 def run_one(client, model, temperature, attack, rep, defense, reasoning_effort=None):
     """Ejecuta una conversacion de ataque y evalua resultado"""

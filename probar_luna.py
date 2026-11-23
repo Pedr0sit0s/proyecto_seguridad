@@ -1,7 +1,9 @@
 import os
+from dotenv import load_dotenv
 from openai import OpenAI
 from tools import TOOL_SCHEMAS
 
+load_dotenv()
 client = OpenAI(base_url=os.getenv("BASE_URL"), api_key=os.getenv("LLM_API_KEY"))
 for temp in (0.7, None):
     kw = {"model": "gpt-6-luna",

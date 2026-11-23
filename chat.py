@@ -1,8 +1,11 @@
 import os
 import json
+from dotenv import load_dotenv
 from openai import OpenAI
 from tools import TOOL_SCHEMAS, ToolExecutor
 from bot import Session
+
+load_dotenv()
 
 MODEL = os.getenv("MODEL", "gpt-4o-mini")
 client = OpenAI(

@@ -1,0 +1,9 @@
+.env
+__pycache__/
+*.pyc
+.venv/
+venv/
+.DS_Store
+
+# nuevas corridas de experimentos (los resultados ya versionados no se tocan)
+results/*.jsonl

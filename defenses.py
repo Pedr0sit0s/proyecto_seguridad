@@ -19,5 +19,5 @@ DEFENSES = {
     "D3": DefenseConfig("D3", input_classifier=True),
     "D5": DefenseConfig("D5", code_validation=True),
     "D6": DefenseConfig("D6", reinforced_prompt=True, sandwich=True, input_classifier=True, code_validation=True),
-    "D7": DefenseConfig("D6", reinforced_prompt=True, sandwich=True, code_validation=True)
+    "D7": DefenseConfig("D7", reinforced_prompt=True, sandwich=True, code_validation=True)
 }
