@@ -54,10 +54,14 @@ def load_done(path):
                     done.add((r["item_id"], r["defense"], r["rep"]))
     return done
 
+def _temperature(s):
+    """Permite --temperature none para modelos que solo aceptan su temperatura por defecto"""
+    return None if s.lower() == "none" else float(s)
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--model", default=os.getenv("MODEL", "gpt-4o-mini"))
-    ap.add_argument("--temperature", type=float, default=0.7)
+    ap.add_argument("--temperature", type=_temperature, default=0.7)
     ap.add_argument("--ids", nargs="*", help="solo estos ataques, por ejemplo N02 N01")
     ap.add_argument("--reps", type=int, default=10, help="repeticiones por atauqe")
     ap.add_argument("--workers", type=int, default=4, help="Conversaciones en paralelo")

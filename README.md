@@ -14,9 +14,24 @@ Variables de entorno (podés poner un `.env` en la raíz, se carga automáticame
 
 ```
 LLM_API_KEY=...
-BASE_URL=...        # opcional, endpoint compatible con la API de OpenAI
-MODEL=gpt-4o-mini    # opcional, modelo por defecto
+BASE_URL=...        # opcional, solo si el modelo no vive en el endpoint por defecto de OpenAI
+MODEL=gpt-4o-mini    # opcional, modelo por defecto si no se pasa --model
 ```
+
+## Modelos evaluados
+
+El experimento compara dos modelos:
+
+- `gpt-4o-mini`
+- `gpt-6-luna`
+
+`run.py`/`run_benign.py` reciben el modelo con `--model`; `MODEL` en el entorno es solo el valor por
+defecto. Cada corrida en `results/` queda nombrada como `<modelo>_<defensa>.jsonl` (ej.
+`gpt4omini_D1.jsonl`, `gpt6luna_D3.jsonl`).
+
+`gpt-6-luna` es un modelo de razonamiento y solo acepta su `temperature` por defecto (no admite `0.7`
+ni el `0` que el clasificador de D3/D6/D7 fuerza internamente). Para corridas con ese modelo, pasar
+`--temperature none --reasoning-effort none`.
 
 ## Estructura
 
@@ -54,3 +69,9 @@ combinaciones (ataque, defensa, repetición) ya guardadas sin error.
 
 Los resultados agregados (ASR por defensa, matrices por ataque, falsos positivos, costo en tokens)
 están en `results/analysis/resumen.md`.
+
+> **Pendiente:** `resumen.md` dice que sus cifras salen de `analyze_final.py`, pero ese script no
+> está en el repo. Los `.jsonl` de D3/D6/D7 se volvieron a correr (fix de `bot.py` que ya no
+> descarta del historial el turno bloqueado por el clasificador) y están al día, pero las tablas de
+> `resumen.md` todavía reflejan los datos viejos de esas tres defensas. Hay que recuperar o
+> reescribir `analyze_final.py` para regenerarlas.

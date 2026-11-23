@@ -56,6 +56,10 @@ class Session:
         #Defensa de filtracion y clasificacion de respuestas del usuaraio a traves de llamada adicional a modelo
         if self.defense.input_classifier and self._is_injection(user_text):
             self.blocked += 1
+            #El turno rechazado queda en el historial, igual que en una conversacion real,
+            #en vez de desaparecer como si el cliente nunca lo hubiera escrito
+            self.history.append({"role": "user", "content": user_text})
+            self.history.append({"role": "assistant", "content": BLOCKED_REPLY})
             return BLOCKED_REPLY
 
         if self.defense.spotlighting:
