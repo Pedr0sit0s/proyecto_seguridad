@@ -67,11 +67,10 @@ python chat.py
 `run.py`/`run_benign.py` son reanudables: si el archivo de salida ya existe, saltan las
 combinaciones (ataque, defensa, repetición) ya guardadas sin error.
 
-Los resultados agregados (ASR por defensa, matrices por ataque, falsos positivos, costo en tokens)
-están en `results/analysis/resumen.md`.
+Los resultados agregados (ASR por defensa con IC 95 % bootstrap, matrices por familia de ataque,
+falsos positivos, costo en tokens) están en `results/analysis/resumen.md`, generado por
+`results/analysis/analyze_final.py`. Para regenerarlos tras una nueva corrida:
 
-> **Pendiente:** `resumen.md` dice que sus cifras salen de `analyze_final.py`, pero ese script no
-> está en el repo. Los `.jsonl` de D3/D6/D7 se volvieron a correr (fix de `bot.py` que ya no
-> descarta del historial el turno bloqueado por el clasificador) y están al día, pero las tablas de
-> `resumen.md` todavía reflejan los datos viejos de esas tres defensas. Hay que recuperar o
-> reescribir `analyze_final.py` para regenerarlas.
+```bash
+python results/analysis/analyze_final.py
+```
