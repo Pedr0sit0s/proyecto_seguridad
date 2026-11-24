@@ -12,7 +12,7 @@
 
 \title[SigmaBurger]{SigmaBurger}
 \subtitle{Prompt Injection en Chatbots de Atención al Público}
-\author[Salinas, Gonzales]{Pedro Salinas \and Felipe Gonzalez}
+\author[Gonzalez, Salinas]{Felipe Gonzalez \and Pedro Salinas}
 \institute[IIC2531]{IIC2531 --- Proyecto Final}
 \date{Noviembre 2026}
 
@@ -48,44 +48,41 @@
   \vfill
   \begin{block}{Pregunta de investigación}
     ¿Qué defensas reducen el éxito de ataques de inyección directa en un
-    agente conversacional, y a qué costo?
+    chat bot, y a qué costo?
   \end{block}
 \end{frame}
 
 \begin{frame}{El problema: un solo canal para todo}
-  \begin{columns}[T]
-    \begin{column}{0.48\textwidth}
-      \begin{itemize}
-        \item El modelo recibe el \emph{system prompt} y el texto del
-          usuario por el mismo canal.
-        \item No hay separación explícita entre datos e instrucciones.
-        \item Un atacante puede intentar que su texto se interprete como
-          una instrucción del sistema.
-      \end{itemize}
-      \vfill
-      \begin{alertblock}{Referencia}
-        OWASP LLM01:2025 --- Prompt Injection
-      \end{alertblock}
-    \end{column}
-    \begin{column}{0.48\textwidth}
-      \centering
-      \resizebox{\linewidth}{!}{%
-      \begin{tikzpicture}[
-          node distance=8mm and 6mm,
-          box/.style={draw, rounded corners, align=center, text width=2.4cm, minimum height=0.9cm},
-          every edge/.style={-Stealth}
-        ]
-        \node[box, fill=blue!10] (sp) {System prompt\\\footnotesize reglas del negocio};
-        \node[box, fill=blue!20, below=of sp] (llm) {LLM};
-        \node[box, fill=blue!10, right=of llm] (tools) {Herramientas\\\footnotesize menú, pedidos, descuento};
-        \node[box, draw=red, dashed, below=of llm] (user) {Usuario\\\footnotesize (inyección)};
-        \draw (sp) edge (llm);
-        \draw (llm) edge (tools);
-        \draw[red] (llm) edge (user);
-      \end{tikzpicture}%
-      }
-    \end{column}
-  \end{columns}
+  \centering
+  \vspace{2mm}
+  \begin{tikzpicture}[
+      x=1cm,
+      y=1cm,
+      card/.style={draw, rounded corners=3pt, align=center, text width=3cm,
+        minimum height=1.3cm, line width=0.9pt, inner sep=8pt},
+      flow/.style={-{Stealth[length=2.5mm]}, line width=1pt, draw=gray!75},
+      every node/.style={font=\small}
+    ]
+    \node[card, fill=blue!8, draw=blue!55] (system) at (0,1.35)
+      {\textbf{System prompt}\\\footnotesize Reglas del negocio};
+    \node[card, fill=orange!8, draw=orange!75!black, dashed] (user) at (0,-1.35)
+      {\textbf{Mensaje del usuario}\\\footnotesize Entrada no confiable};
+    \node[card, text width=3.2cm, minimum height=2cm, fill=violet!9, draw=violet!65]
+      (context) at (4.7,0)
+      {\textbf{Contexto compartido}\\[2pt]\Large LLM};
+    \node[card, text width=3cm, minimum height=2cm, fill=teal!8, draw=teal!60!black]
+      (tools) at (9.2,0)
+      {\textbf{Herramientas}\\[2pt]\footnotesize Menú · pedidos · descuentos\\[3pt]
+       \scriptsize Sin validación de argumentos por defecto};
+
+    \draw[flow] (system.east) to[out=0,in=155] (context.155);
+    \draw[flow, draw=orange!80!black] (user.east) to[out=0,in=205] (context.205);
+    \draw[flow] (context.east) -- node[above=4pt, font=\scriptsize, text=gray!80!black]
+      {argumentos} (tools.west);
+  \end{tikzpicture}
+  \vspace{3mm}
+  \vfill
+  {\footnotesize\color{gray!80!black}Referencia: OWASP LLM01:2025 --- Prompt Injection}
 \end{frame}
 
 \begin{frame}{SigmaBurger: el agente bajo prueba}
@@ -117,10 +114,6 @@
     \end{tabular}
   \end{table}
   \vfill
-  \begin{exampleblock}{Pregunta que guía el proyecto}
-    ¿Qué defensas reducen el éxito de ataques de inyección directa, y a
-    qué costo?
-  \end{exampleblock}
 \end{frame}
 
 \section{Metodología}
@@ -245,9 +238,6 @@
     \end{tabular}
   \end{table}
   \vfill
-  \begin{exampleblock}{D5}
-    Mismo costo en tokens que D0, pero 0\% de daño real.
-  \end{exampleblock}
 \end{frame}
 
 \begin{frame}{El costo oculto de un clasificador}
@@ -271,25 +261,7 @@
   \end{itemize}
 \end{frame}
 
-\section{Discusión}
 
-\begin{frame}{Lo que encontramos al revisar}
-  \begin{enumerate}
-    \item D7 estaba mal etiquetada internamente (compartía el nombre con
-      D6 por un error de copia).
-    \item Un turno bloqueado por el clasificador desaparecía del historial
-      en vez de quedar registrado --- se corrigió y se repitieron las
-      corridas de D3, D6 y D7.
-    \item Un cupón inválido con porcentaje permitido ($\le 10\%$) no se
-      contaba como intento.
-  \end{enumerate}
-  \vfill
-  \begin{block}{Nota sobre reproducibilidad}
-    gpt-6-luna dejó de aceptar temperaturas distintas de su valor por
-    defecto durante el desarrollo: el proveedor externo puede cambiar el
-    comportamiento de su API entre corridas.
-  \end{block}
-\end{frame}
 
 \begin{frame}{Conclusión}
   \begin{alertblock}{}
